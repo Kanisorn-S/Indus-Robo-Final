@@ -1,4 +1,17 @@
+#!/usr/bin/env python
+# encoding: utf=8
+
+""" 
+#UR Controller Primary Client Interface Reader
+# For software version 3.0
+#
+# Overview of client interface      : https://www.universal-robots.com/articles/ur/interface-communication/overview-of-client-interfaces/
+# Datastream info found             : https://www.universal-robots.com/articles/ur/interface-communication/remote-control-via-tcpip/
+# Script command for control robot  : https://s3-eu-west-1.amazonaws.com/ur-support-site/124999/scriptManual_3.15.4.pdf
+"""
+
 import socket, struct , time ,os , math , numpy
+
 
 v_x = 0
 v_y = 0
@@ -26,8 +39,29 @@ def robot_connection() :
         arm_recv = arm.recv(4096)
         if arm_recv :
                 print('Connected to Robot RTDE....SUCCESSFULLY!')
+                #print (r_recv)
         else :
                 print('Connected to Robot RTDE...FAILED!')
+
+def robot_moveTCPmode(x,y,rz) :
+
+        global moveX, moveY, moveZ, moveRx, moveRy, moveRz, arm
+        print('Robot start moveing')
+
+        moveX  = x /100 
+        moveY  = y /100
+        moveZ  = 0 
+        moveRx = 0 
+        moveRy = 0 
+        #moveRz = rz / 1000
+        moveRz = 0
+        
+        cmd_move = str.encode('movel(pose_add(get_actual_tcp_pose(),p['+str(moveX)+','+str(moveY)+','+str(moveZ)+','+str(moveRx)+','+str(moveRy)+','+str(moveRz)+'],0.5,0.5,0,0)\n')
+        print (cmd_move)
+        print (type(cmd_move))
+        arm.send(cmd_move)
+        time.sleep(1)
+ 
 
 def robot_home() :
         ##vs ref pos
@@ -41,6 +75,7 @@ def robot_home() :
         moveRz = -0.039
 
         cmd_move = str.encode('movel(p['+str(moveX)+','+str(moveY)+','+str(moveZ)+','+str(moveRx)+','+str(moveRy)+','+str(moveRz)+'],0.5,0.5,0,0)\n')
+        #r.send(b'movel(p[0.2,-0.35,0.1,2.253,-2.271,0],0.5,0.25,0,0)\n')
         print (cmd_move)
         arm.send(cmd_move)
         time.sleep(1)
@@ -75,9 +110,21 @@ def gripper_connection() :
       print (g_recv)
       time.sleep(3)
       g.send(b'SET GTO 1\n')
-      g.send(b'SET SPE 255\n')
-      g.send(b'SET FOR 255\n')
+      g.send(b'SET SPE 100\n')
+      g.send(b'SET FOR 100\n')
       print ('Gripper Activated')
+
+def grip_control(c):
+        if c == '0' :
+                g.send(b'SET POS 0\n')
+        elif c == '255' :
+                g.send(b'SET POS 255\n')
+
+        time.sleep(1)
+        g_recv = str(g.recv(10), 'UTF-8')
+        g.send(b'GET POS \n')
+        g_recv = str(g.recv(10), 'UTF-8')
+        print ('Gripper Pos =    ' + g_recv)
 
 def control_gripper(activate: bool):
         g.send(f"SET POS {255 if activate else 0}\n".encode("UTF-8"))
@@ -96,14 +143,14 @@ def conv_connection():
         conv, addr = c.accept()
         with conv:
                 print(f"Connected by {addr}")
-                conv.sendall(b'activate,tcp,0.0\n')
-                time.sleep(1)
-                conv.sendall(b'pwr_on,conv,0\n')
-                time.sleep(1)
-                conv.sendall(b'set_vel,conv,10\n')
-                time.sleep(1)
-                conv.sendall(b'jog_stop,conv,0\n')
-                time.sleep(1)
+                # conv.sendall(b'activate,tcp,0.0\n')
+                # time.sleep(1)
+                # conv.sendall(b'pwr_on,conv,0\n')
+                # time.sleep(1)
+                # conv.sendall(b'set_vel,conv,10\n')
+                # time.sleep(1)
+                # conv.sendall(b'jog_stop,conv,0\n')
+                # time.sleep(1)
                 conv_recv = conv.recv(100)
                 print(conv_recv)
 
@@ -128,17 +175,51 @@ def vs_connection():
         v.connect((vs_ip, vs_port))
         if v.connect :
                 print ('Connected to Vision system ....SUCCESSFULLY!')
+        v_data = ''
+
+
 
 # Format of the data received from VS is [x, y, rz]
 def vs_recv():
 
-        while v_data == '':
-                print ('send start to cvs')
-                v.send (b'start!')
-                v_data = v.recv(11)
+        v_x = 0
+        v_y = 0
+        v_rz = 0
         
-        coor_str = str(v_data, 'UTF-8')
-        return coor_str
+        v_data = ''
+        v_coor = [0,0,0]
+              
+        
+        while  v_coor == [0,0,0] :
+                while v_data == '':
+                        
+                        print ('send start to cvs')
+                        v.send (b'start!')
+                        v_data = v.recv(11)
+               
+                coor_str = str(v_data, 'UTF-8')
+                # print ('str v_data =   ' + coor_str)
+                return coor_str
+                a = coor_str.split("[")
+                b = a[1].split("]")
+                coor_int = (b[0].split(","))
+                v_x    = float(coor_int[0])
+                offset = float(coor_int[1])
+                v_y    = offset
+                v_rz   = float(coor_int[2])
+
+                print ('v_x =  ' + str(v_x))
+                print ('v_y =  ' + str(v_y))
+                print ('v_rz =  ' + str(v_rz))
+
+                v_coor = [v_x,v_y,v_rz]
+                print ('v_coor  ======   ' + str(v_coor))
+                if math.isnan(v_coor[0]) or math.isnan(v_coor[1]) :
+                        print ('v_coor == nan')
+                        v_data = ''
+                        v_coor = [0,0,0]
+
+        return v_coor
 
 def test_vs():
         vs_connection()
@@ -146,21 +227,14 @@ def test_vs():
                 print(vs_recv())
                 time.sleep(1)
 
-def grab_linear(x: float, y:float, rz: float):
-        print('Grabbing the object...')
-        movel(pose(x, y, 0.07, 2.233, 2.257, rz))
-        movel(relative_pose(0, 0, -0.03, 0, 0, 0))
-        control_gripper(True)
-        movel(relative_pose(0, 0, 0.03, 0, 0, 0))
-
 def test():
         print("Begin testing system...")
-        robot_connection()
-        print("----------------------")
-        gripper_connection()
-        print("----------------------")
-        # conv_connection()
+        # robot_connection()
         # print("----------------------")
+        # gripper_connection()
+        # print("----------------------")
+        conv_connection()
+        print("----------------------")
         
         while True:
                 user_input = input("Press '1' for Robot arm control\n'2' for Gripper control\n'3' for Conveyer belt control\nPress 'X' to exit\n")
@@ -215,8 +289,75 @@ def test():
                                 conv_set_speed(speed)
                         
               
+# def main():
+#         robot_connection()
+#         gripper_connection()
+#         #conv_connection()
+#         vs_connection()
+#         grip_control(255)
+#         v_x = 0
+#         v_y = 0
+#         v_rz = 0        
+
+        
+#         robot_home() 
+#         time.sleep(1)
+#         #vs_recv()
+
+
+#         #r.send(b'movel(p[-0.1176,-0.2903,0.00,3.141,-0.037,0],0.5,0.5,0,0)\n')
+#         while 0 :
+                
+#                 xx = input('x =>   ' )
+#                 if xx == '1' :
+                        
+#                         xint = float(xx)
+#                         cmd = str.encode('movel(pose_add(get_actual_tcp_pose(),p['+str(xint)+',0,0,0,0,0]),1,0.25,0,0)\n')
+#                         #cmd_move = str.encode(cmd)
+#                         r.send(cmd)
+
+#                 elif xx == '2' :
+#                         cnt_pick = 0
+#                         while 1 :
+#                                 r_offset = vs_recv()
+#                                 print ('r_offset  =  ' + str(r_offset))
+                                
+#                                 if  1:
+#                                         print ('robot moving')
+#                                         Change axis and units
+#                                         x_m = -r_offset[1]/10000
+#                                         offset = r_offset[0]/10000
+#                                         y_m    = -offset
+#                                         z_rad = '{:0.2f}'.format(r_offset[2]*0.01745)
+#                                         #cmd = str.encode('movel(pose_add(get_actual_tcp_pose(),p['+ str(x_m) +','+ str(y_m)+',0,0,0,'+str(z_rad)+']),1,0.5,0,0)\n')
+#                                         cmd = str.encode('movel(pose_add(get_actual_tcp_pose(),p['+ str(x_m) +','+ str(y_m)+',0,0,0,0]),1,0.8,0,0)\n')
+#                                         print (str(cmd))
+#                                         r.send(cmd)
+
+#                                 if x_m < 0.003 and x_m > -0.003 and y_m <0.003 and y_m > -0.003  :
+#                                         cnt_pick += 1
+#                                 else :
+#                                         cnt_pick = 0
+#                                 if cnt_pick == 5 :
+#                                         print ('robot start picking')
+                                        
+#                                         cmd = str.encode('movel(pose_add(get_actual_tcp_pose(),p['+ str(x_m) +','+ str(y_m)+',0,0,0,0]),1,0.8,0,0)\n')
+#                                         print (str(cmd))
+#                                         r.send(cmd)
+                                        
+                                 
+
+                
+#         while 0:
+#                 r.send(b'movel(pose_add(get_actual_tcp_pose(),p[-0.05,0,0,0,0,0]),1,0.25,0,0)\n')
+
+
+        
+
+
 if __name__ == '__main__':
     import sys
+    # main()
     test()
     # test_vs()
 
