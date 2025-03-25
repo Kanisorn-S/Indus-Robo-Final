@@ -1,4 +1,5 @@
-import socket, struct , time ,os , math , numpy
+import socket, struct , time ,os , math , numpy as np
+from scipy.spatial.transform import Rotation as R
 
 v_x = 0
 v_y = 0
@@ -33,30 +34,34 @@ def robot_home() :
         ##vs ref pos
         global arm
         print('Robot start moveing')
-        moveX  = 0.05
+        moveX  = 0.116
         moveY  = -0.300
-        moveZ  = 0.07
+        moveZ  = 0.02
         moveRx = 2.233
         moveRy = 2.257
         moveRz = -0.039
 
-        cmd_move = str.encode('movel(p['+str(moveX)+','+str(moveY)+','+str(moveZ)+','+str(moveRx)+','+str(moveRy)+','+str(moveRz)+'],0.5,0.5,0,0)\n')
+        cmd_move = str.encode('movej(p['+str(moveX)+','+str(moveY)+','+str(moveZ)+','+str(moveRx)+','+str(moveRy)+','+str(moveRz)+'],0.5,0.5,0,0)\n')
         print (cmd_move)
         arm.send(cmd_move)
-        time.sleep(1)
+        time.sleep(5)
  
 def relative_pose(x: float = 0, y: float = 0, z: float = 0, rx: str | float = 0, ry: str | float = 0, rz: str | float = 0) -> str:
         return f"pose_add(get_actual_tcp_pose(), p[{x},{y},{z},{rx},{ry},{rz}])"
 
+def relative_joint(x: float = 0, y: float = 0, z: float = 0, rx: str | float = 0, ry: str | float =0, rz: str | float = 0) -> str:
+        return f"pose_add(get_actual_joint_positions())"
+
 def movel(pose, a: float = 0.5, v: float = 0.5, t: float = 0, r: float = 0) -> None:
         global arm
+        print(f"movel({pose},{a},{v},{t},{r})\n")
         arm.send(f"movel({pose},{a},{v},{t},{r})\n".encode("UTF-8"))
-        time.sleep(2)
+        time.sleep(1.5)
 
 def movej(pose, a: float = 0.5, v: float = 0.5, t: float = 0, r: float = 0) -> None:
         global arm
         arm.send(f"movej({pose},{a},{v},{t},{r})\n".encode("UTF-8"))
-        time.sleep(2)
+        time.sleep(1)
 
 def pose(x: float, y: float, z: float, rx: float, ry: float, rz: float):
         return f"p[{x},{y},{z},{rx},{ry},{rz}]"
@@ -100,9 +105,13 @@ def conv_connection():
                 time.sleep(1)
                 conv.sendall(b'pwr_on,conv,0\n')
                 time.sleep(1)
-                conv.sendall(b'set_vel,conv,10\n')
+                conv.sendall(b'commands\n')
                 time.sleep(1)
+                conv.sendall(b'jog_fwd,conv,0\n')
+                time.sleep(10)
                 conv.sendall(b'jog_stop,conv,0\n')
+                time.sleep(1)
+                conv.sendall(b'pwr_off,conv,0\n')
                 time.sleep(1)
                 conv_recv = conv.recv(100)
                 print(conv_recv)
@@ -131,20 +140,74 @@ def vs_connection():
 
 # Format of the data received from VS is [x, y, rz]
 def vs_recv():
-
+        v_data = ''
         while v_data == '':
-                print ('send start to cvs')
-                v.send (b'start!')
-                v_data = v.recv(11)
+                print('send start to cvs')
+                v.send(b'start!')
+                v_data = v.recv(100)
         
         coor_str = str(v_data, 'UTF-8')
-        return coor_str
+        print(coor_str)
+        # Extract variables from the formatted string
+        import re
+        match = re.match(
+            r"<\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+)\),\(([^,]+),([^,]+)\)>",
+            coor_str
+        )
+        if match:
+                x_x1, x_x2, x_ang = map(float, match.group(1, 2, 3))
+                xc_x1, xc_x2, xc_ang = map(float, match.group(4, 5, 6))
+                y_y1, y_y2 = map(float, match.group(7, 8))
+                yc_y1, yc_y2 = map(float, match.group(9, 10))
+                
+                # Print the extracted variables in a human-readable format
+                # print("Extracted Variables:")
+                # print(f"x_x1: {x_x1}, x_x2: {x_x2}, x_ang: {x_ang}")
+                # print(f"xc_x1: {xc_x1}, xc_x2: {xc_x2}, xc_ang: {xc_ang}")
+                # print(f"y_y1: {y_y1}, y_y2: {y_y2}")
+                # print(f"yc_y1: {yc_y1}, yc_y2: {yc_y2}")
+                
+                return x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2
+        else:
+                raise ValueError("Received data format is invalid")
+
+def find_coords(x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2):
+        degree = (x_ang + xc_ang) / 2
+        print(degree)
+        degree_rad = round(((x_ang + xc_ang) / 2) * (math.pi / (180)), 4)
+        x_coor = ((xc_x1 + xc_x2) / 2) + ((x_x1 + x_x2) / 2)
+        y_coor = ((yc_y1 + yc_y2) / 2) + ((y_y1 + y_y2) / 2)
+        print(f"Degree: {degree}, x_coor: {x_coor}, y_coor: {y_coor}")
+        return degree_rad, x_coor, y_coor
+
+def offset_camera(x_coor, y_coor):
+        x_coor_robot = (y_coor + 160) / 1000
+        y_coor_robot = - x_coor / 1000
+        print(f"Offset x_coor: {x_coor_robot}, y_coor: {y_coor_robot}")
+        return x_coor_robot, y_coor_robot
 
 def test_vs():
         vs_connection()
-        while True:
-                print(vs_recv())
-                time.sleep(1)
+        robot_connection()
+        gripper_connection()
+        # robot_home()
+
+        # while True:
+        x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2 = vs_recv()
+        degree, x_coor, y_coor = find_coords(x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2)
+        x_coor_robot, y_coor_robot = offset_camera(x_coor, y_coor)
+        print(f"Degree: {degree}, x_coor_robot: {x_coor_robot}, y_coor_robot: {y_coor_robot}")
+        arm.send(b"get_actual_joint_positions()\n")
+        arm_recv = arm.recv(1108)
+        joint_positions = struct.unpack('!6d', arm_recv[252:300])
+        movel(f'[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3]},{joint_positions[4]},{joint_positions[5]-degree}]')
+        movel(relative_pose(z=-0.1))
+        movel(relative_pose(x=x_coor_robot, y=y_coor_robot))
+        movel(relative_pose(z=-0.16))
+        control_gripper(True)
+        movel(relative_pose(z=0.16))
+        robot_home()
+        time.sleep(1)
 
 def grab_linear(x: float, y:float, rz: float):
         print('Grabbing the object...')
@@ -155,12 +218,12 @@ def grab_linear(x: float, y:float, rz: float):
 
 def test():
         print("Begin testing system...")
-        robot_connection()
-        print("----------------------")
-        gripper_connection()
-        print("----------------------")
-        # conv_connection()
+        # robot_connection()
         # print("----------------------")
+        # gripper_connection()
+        # print("----------------------")
+        conv_connection()
+        print("----------------------")
         
         while True:
                 user_input = input("Press '1' for Robot arm control\n'2' for Gripper control\n'3' for Conveyer belt control\nPress 'X' to exit\n")
@@ -217,6 +280,6 @@ def test():
               
 if __name__ == '__main__':
     import sys
-    test()
-    # test_vs()
+    # test()
+    test_vs()
 
