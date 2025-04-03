@@ -37,13 +37,7 @@ class URARM:
         time.sleep(1.5)
     
     def rotate_TCP(self, rx: float = 0, ry: float = 0, rz: float = 0):
-        # self.arm.send(b"get_target_joint_positions()\n")
-        # arm_recv = self.arm.recv(1108)
-        # joint_positions = struct.unpack('!6d', arm_recv[252:300])
-        # print("Target joint positions:", joint_positions)
-        joint_positions = self.HOME_JOINT  # Replace with actual joint positions if needed
-        print(f'[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3] + rx},{joint_positions[4] + ry},{joint_positions[5] + rz}]')
-        self.movel(f'[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3] + rx},{joint_positions[4] + ry},{joint_positions[5] + rz}]')
+        self.movel(f'[{self.HOME_JOINT[0]},{self.HOME_JOINT[1]},{self.HOME_JOINT[2]},{self.HOME_JOINT[3] + rx},{self.HOME_JOINT[4] + ry},{self.HOME_JOINT[5] + rz}]')
 
     @staticmethod
     def pose(x: float, y: float, z: float, rx: float, ry: float, rz: float):
