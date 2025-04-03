@@ -140,43 +140,36 @@ def vs_connection():
 
 # Format of the data received from VS is [x, y, rz]
 def vs_recv():
+        v_data = ''
+        while v_data == '':
+                print('send start to cvs')
+                v.send(b'start!')
+                v_data = v.recv(100)
+        
+        coor_str = str(v_data, 'UTF-8')
+        print(coor_str)
+        # Extract variables from the formatted string
         import re
-        import math
-
-        while True:
-                v_data = ''
-                while not v_data.endswith(b'>'):
-                        print('send start to cvs')
-                        v.send(b'start!')
-                        v_data += v.recv(100)
-                # Alternative
-                # v_data = bytearray()
-                # while not v_data.endswith(b'>'):
-                #         print('send start to cvs')
-                #         v.send(b'start!')
-                #         v_data.extend(v.recv(100))
+        match = re.match(
+            r"<\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+)\),\(([^,]+),([^,]+)\)>",
+            coor_str
+        )
+        if match:
+                x_x1, x_x2, x_ang = map(float, match.group(1, 2, 3))
+                xc_x1, xc_x2, xc_ang = map(float, match.group(4, 5, 6))
+                y_y1, y_y2 = map(float, match.group(7, 8))
+                yc_y1, yc_y2 = map(float, match.group(9, 10))
                 
+                # Print the extracted variables in a human-readable format
+                # print("Extracted Variables:")
+                # print(f"x_x1: {x_x1}, x_x2: {x_x2}, x_ang: {x_ang}")
+                # print(f"xc_x1: {xc_x1}, xc_x2: {xc_x2}, xc_ang: {xc_ang}")
+                # print(f"y_y1: {y_y1}, y_y2: {y_y2}")
+                # print(f"yc_y1: {yc_y1}, yc_y2: {yc_y2}")
                 
-                coor_str = str(v_data, 'UTF-8')
-                print(coor_str)
-                
-                match = re.match(
-                    r"<\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+)\),\(([^,]+),([^,]+)\)>",
-                    coor_str
-                )
-                if match:
-                        try:
-                                x_x1, x_x2, x_ang = map(float, match.group(1, 2, 3))
-                                xc_x1, xc_x2, xc_ang = map(float, match.group(4, 5, 6))
-                                y_y1, y_y2 = map(float, match.group(7, 8))
-                                yc_y1, yc_y2 = map(float, match.group(9, 10))
-                                
-                                if not any(math.isnan(val) for val in [x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2]):
-                                        return x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2
-                        except ValueError:
-                                print("Invalid data received, retrying...")
-                else:
-                        print("Received data format is invalid, retrying...")
+                return x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2
+        else:
+                raise ValueError("Received data format is invalid")
 
 def find_coords(x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2):
         degree = (x_ang + xc_ang) / 2

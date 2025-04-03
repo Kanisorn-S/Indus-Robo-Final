@@ -8,7 +8,7 @@ robot_ip        = '10.10.0.14'       #UR3 .14  UR5 .26
 robot_port      = 30003              ####RTDE
 gripper_port    = 63352
 vs_ip           = '10.10.1.10'
-vs_port         = 2024
+vs_port         = 2023
 conv_ip         = '10.10.0.98'
 conv_port       = 2002
 
@@ -105,10 +105,12 @@ def conv_connection():
                 time.sleep(1)
                 conv.sendall(b'pwr_on,conv,0\n')
                 time.sleep(1)
-                conv.sendall(b'commands\n')
-                time.sleep(1)
+                conv.sendall(b'set_vel,conv,20\n')
+                time.sleep(5)
+                #conv.sendall(b'commands\n')
+                #time.sleep(1)
                 conv.sendall(b'jog_fwd,conv,0\n')
-                time.sleep(10)
+                time.sleep(1)
                 conv.sendall(b'jog_stop,conv,0\n')
                 time.sleep(1)
                 conv.sendall(b'pwr_off,conv,0\n')
@@ -175,8 +177,8 @@ def find_coords(x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y
         degree = (x_ang + xc_ang) / 2
         print(degree)
         degree_rad = round(((x_ang + xc_ang) / 2) * (math.pi / (180)), 4)
-        x_coor = ((xc_x1 + xc_x2) / 2) + ((x_x1 + x_x2) / 2)
-        y_coor = ((yc_y1 + yc_y2) / 2) + ((y_y1 + y_y2) / 2)
+        x_coor = (((xc_x1 + xc_x2) / 2) + ((x_x1 + x_x2) / 2)) / 2
+        y_coor = (((yc_y1 + yc_y2) / 2) + ((y_y1 + y_y2) / 2)) / 2
         print(f"Degree: {degree}, x_coor: {x_coor}, y_coor: {y_coor}")
         return degree_rad, x_coor, y_coor
 
@@ -200,13 +202,14 @@ def test_vs():
         arm.send(b"get_actual_joint_positions()\n")
         arm_recv = arm.recv(1108)
         joint_positions = struct.unpack('!6d', arm_recv[252:300])
-        movel(f'[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3]},{joint_positions[4]},{joint_positions[5]-degree}]')
-        movel(relative_pose(z=-0.1))
-        movel(relative_pose(x=x_coor_robot, y=y_coor_robot))
-        movel(relative_pose(z=-0.16))
-        control_gripper(True)
-        movel(relative_pose(z=0.16))
-        robot_home()
+        print(joint_positions)
+        # movel(f'[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3]},{joint_positions[4]},{joint_positions[5]-degree}]')
+        # movel(relative_pose(z=-0.1))
+        # movel(relative_pose(x=x_coor_robot, y=y_coor_robot))
+        # movel(relative_pose(z=-0.16))
+        # control_gripper(True)
+        # movel(relative_pose(z=0.16))
+        # robot_home()
         time.sleep(1)
 
 def grab_linear(x: float, y:float, rz: float):
@@ -276,10 +279,14 @@ def test():
                         elif user_input == '3':
                                 speed = int(input("Enter speed: "))
                                 conv_set_speed(speed)
-                        
+
+def test_conv():
+        conv_connection()
+        print("----------------------")
               
 if __name__ == '__main__':
     import sys
     # test()
     test_vs()
+    # test_conv()
 

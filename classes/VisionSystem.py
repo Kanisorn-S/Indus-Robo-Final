@@ -4,18 +4,18 @@ import re
 import math
 
 class VisionSystem:
-    def __init__(self, vs_ip: str, vs_port: int = 2024):
+    def __init__(self, vs_ip: str, vs_port: int = 2023):
         self.v = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.v.connect((vs_ip, vs_port))
         print('Connected to Vision system ....SUCCESSFULLY!')
 
     def receive_data(self):
         while True:
-            v_data = ''
+            v_data = b''
+            print('send start to cvs')
             while not v_data.endswith(b'>'):
-                print('send start to cvs')
                 self.v.send(b'start!')
-                v_data += self.v.recv(100)
+                v_data += self.v.recv(1)
             # Alternative
             # v_data = bytearray()
             # while not v_data.endswith(b'>'):
@@ -26,6 +26,7 @@ class VisionSystem:
                 
             coor_str = str(v_data, 'UTF-8')
             print(coor_str)
+            print("----------------------------------------")
                 
             match = re.match(
                 r"<\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+),([^,]+)\),\(([^,]+),([^,]+)\),\(([^,]+),([^,]+)\)>",
@@ -49,8 +50,8 @@ class VisionSystem:
     def find_coords(x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2):
         degree = (x_ang + xc_ang) / 2
         degree_rad = round(degree * (math.pi / 180), 4)
-        x_coor = ((xc_x1 + xc_x2) / 2) + ((x_x1 + x_x2) / 2)
-        y_coor = ((yc_y1 + yc_y2) / 2) + ((y_y1 + y_y2) / 2)
+        x_coor = (((xc_x1 + xc_x2) / 2) + ((x_x1 + x_x2) / 2)) / 2
+        y_coor = (((yc_y1 + yc_y2) / 2) + ((y_y1 + y_y2) / 2)) / 2
         return degree_rad, x_coor, y_coor
 
     @staticmethod

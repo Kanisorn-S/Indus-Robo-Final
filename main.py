@@ -13,7 +13,7 @@ def main():
     # Initialize the robot, gripper, conveyor belt, and vision system
     robot = URARM(robot_ip)
     gripper = Gripper(robot_ip)
-    conveyor = ConveyorBelt(conv_ip)
+    # conveyor = ConveyorBelt(conv_ip)
     vision = VisionSystem(vs_ip)
 
     # Move the robot to the home position
@@ -22,7 +22,7 @@ def main():
     x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2 = vision.receive_data()
     degree, x_coor, y_coor = vision.find_coords(x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2)
     x_coor_rel, y_coor_rel = vision.offset_camera(x_coor, y_coor)
-    print(f"Degree: {degree}, x_coor: {x_coor}, y_coor: {y_coor}")
+    print(f"Degree: {degree}, x_coor: {x_coor_rel}, y_coor: {y_coor_rel}")
 
     # Move the robot to the object location and pick up the object
     robot.rotate_TCP(rz=-degree)

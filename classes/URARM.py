@@ -10,6 +10,7 @@ class URARM:
     HOME_RX = 2.233
     HOME_RY = 2.257
     HOME_RZ = -0.039
+    HOME_JOINT = [-0.8062151114093226, -1.6997678915606897, -1.0278661886798304, -2.017801109944479, 1.5453407764434814, 2.3251354694366455]
 
     def __init__(self, robot_ip: str, robot_port: int = 30003):
         self.arm = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -36,10 +37,13 @@ class URARM:
         time.sleep(1.5)
     
     def rotate_TCP(self, rx: float = 0, ry: float = 0, rz: float = 0):
-        self.arm.send(b"get_actual_tcp_pose()\n")
-        arm_recv = self.arm.recv(1108)
-        joint_positions = struct.unpack('!6d', arm_recv[252:300])
-        self.movel(f"p[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3] + rx},{joint_positions[4] + ry},{joint_positions[5] + rz}]")
+        # self.arm.send(b"get_target_joint_positions()\n")
+        # arm_recv = self.arm.recv(1108)
+        # joint_positions = struct.unpack('!6d', arm_recv[252:300])
+        # print("Target joint positions:", joint_positions)
+        joint_positions = self.HOME_JOINT  # Replace with actual joint positions if needed
+        print(f'[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3] + rx},{joint_positions[4] + ry},{joint_positions[5] + rz}]')
+        self.movel(f'[{joint_positions[0]},{joint_positions[1]},{joint_positions[2]},{joint_positions[3] + rx},{joint_positions[4] + ry},{joint_positions[5] + rz}]')
 
     @staticmethod
     def pose(x: float, y: float, z: float, rx: float, ry: float, rz: float):
