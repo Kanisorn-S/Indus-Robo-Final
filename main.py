@@ -3,6 +3,7 @@ from classes.Gripper import Gripper
 from classes.ConveyorBelt import ConveyorBelt
 from classes.VisionSystem import VisionSystem
 import time
+import math
 
 def main():
     # Define IP addresses for the robot, vision system, and conveyor belt
@@ -12,17 +13,19 @@ def main():
 
     # Initialize the robot, gripper, conveyor belt, and vision system
     robot = URARM(robot_ip)
-    # gripper = Gripper(robot_ip)
-    # conveyor = ConveyorBelt(conv_ip)
+    gripper = Gripper(robot_ip)
     # vision = VisionSystem(vs_ip)
 
+
     # Move the robot to the home position
-    # conveyor.initialize()
-    # conveyor.start()
-    # time.sleep(2)  # Allow some time for the conveyor to start
-    # conveyor.stop()
-    # time.sleep(1)  # Allow some time for the conveyor to stop
+    # robot.get_current_joint_angle();
     robot.move_home()
+    robot.get_actual_tcp_pose()
+
+    # Initialize the conveyor belt
+    # conveyor = ConveyorBelt(conv_ip)
+    # time.sleep(1)  # Wait for the conveyor to start
+
     # Get and process the x, y coordinates and orientation of the object from the vision system
     # x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2 = vision.receive_data()
     # degree, x_coor, y_coor = vision.find_coords(x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2)
@@ -30,7 +33,8 @@ def main():
     # print(f"Degree: {degree}, x_coor: {x_coor_rel}, y_coor: {y_coor_rel}")
 
     # Move the robot to the object location and pick up the object
-    # robot.rotate_TCP(rz=-degree)
+    # degree = 10 * math.pi / 180
+    # robot.rotate_TCP(rz=degree)
     # robot.movel(URARM.relative_pose(z=-0.1)) # Move down to allow movement to the object (might remove if not needed)
     # robot.movel(URARM.relative_pose(x=x_coor_rel, y=y_coor_rel))
     # robot.movel(URARM.relative_pose(z=-0.16))

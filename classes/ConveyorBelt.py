@@ -8,21 +8,29 @@ class ConveyorBelt:
         self.c.listen(1)
         print("Conveyor belt socket is listening")
         self.conv, self.addr = self.c.accept()
-        with self.conv: 
-            print(f"Connected by {self.addr}") 
+        # with self.conv: 
+        print(f"Connected by {self.addr}") 
 
-            self.conv.sendall(b'activate,tcp\n') 
-            time.sleep(1) 
-            self.conv.sendall(b'pwr_on,conv,0\n') 
-            time.sleep(1) 
-            self.conv.sendall(b'set_vel,conv,20\n') 
-            time.sleep(1) 
+        self.conv.sendall(b'activate,tcp\n') 
+        time.sleep(1) 
+        self.conv.sendall(b'pwr_on,conv,0\n') 
+        time.sleep(1) 
+        self.conv.sendall(b'set_vel,conv,20\n') 
+        time.sleep(1) 
+        self.conv.sendall(b'jog_fwd,conv,0\n') 
+        time.sleep(5)
 
-    def set_speed(self, speed: int):
-        self.conv.send(f'set_vel,conv,{speed}\n'.encode('UTF-8'))
+        self.conv.sendall(b'jog_stop,conv,0\n') 
 
-    def start(self, forward: bool = True):
-        self.conv.send(b'jog_fwd,conv,0\n' if forward else b'jog_bwd,conv,0\n')
+        conv_recv = self.conv.recv(100) 
+        print (conv_recv) 
+    
 
-    def stop(self):
-        self.conv.send(b'jog_stop,conv,0\n')
+    # def set_speed(self, speed: int):
+    #     self.conv.sendall(f'set_vel,conv,{speed}\n'.encode('UTF-8'))
+
+    # def start(self, forward: bool = True):
+    #     self.conv.sendall(b'jog_fwd,conv,0\n' if forward else b'jog_bwd,conv,0\n')
+
+    # def stop(self):
+    #     self.conv.sendall(b'jog_stop,conv,0\n')
