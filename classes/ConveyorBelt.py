@@ -8,7 +8,15 @@ class ConveyorBelt:
         self.c.listen(1)
         print("Conveyor belt socket is listening")
         self.conv, self.addr = self.c.accept()
-        print(f"Connected by {self.addr}")
+        with self.conv: 
+            print(f"Connected by {self.addr}") 
+
+            self.conv.sendall(b'activate,tcp\n') 
+            time.sleep(1) 
+            self.conv.sendall(b'pwr_on,conv,0\n') 
+            time.sleep(1) 
+            self.conv.sendall(b'set_vel,conv,20\n') 
+            time.sleep(1) 
 
     def set_speed(self, speed: int):
         self.conv.send(f'set_vel,conv,{speed}\n'.encode('UTF-8'))

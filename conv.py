@@ -15,7 +15,7 @@ import socket,time
 from socket import * 
  
  
-host    = '10.10.0.98' 
+host    = '0.0.0.0' 
 port_conv = 2002 
  
 c = socket(AF_INET, SOCK_STREAM) 
@@ -34,19 +34,20 @@ print ("socket is listening")
 conv, addr = c.accept() 
 with conv: 
     print(f"Connected by {addr}") 
-    # conv.sendall(b'activate,tcp,0.0\n') 
-    # time.sleep(1) 
 
-    # conv.sendall(b'set_vel,conv,1\n') 
-    # time.sleep(1) 
+    conv.sendall(b'activate,tcp\n') 
+    time.sleep(1) 
+    conv.sendall(b'pwr_on,conv,0\n') 
+    time.sleep(1) 
+    conv.sendall(b'set_vel,conv,20\n') 
+    time.sleep(1) 
  
-    # conv.sendall(b'pwr_on,conv,0\n') 
-    # time.sleep(1) 
-    
-    # conv.sendall(b'jog_fwd,conv,0\n') 
-    # time.sleep(5)
 
-    # conv.sendall(b'jog_stop,conv,0\n') 
+    
+    conv.sendall(b'jog_fwd,conv,0\n') 
+    time.sleep(5)
+
+    conv.sendall(b'jog_stop,conv,0\n') 
     # time.sleep(1) 
 
 

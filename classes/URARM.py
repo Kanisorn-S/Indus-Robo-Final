@@ -1,15 +1,22 @@
 import socket
 import time
 import struct
+import math
 
 class URARM:
 
     HOME_X = 0.116
     HOME_Y = -0.300
-    HOME_Z = 0.02
+    HOME_Z = 0.8
     HOME_RX = 2.233
     HOME_RY = 2.257
-    HOME_RZ = -0.039
+    HOME_RZ = -0.039 
+    # HOME_X = 0.116
+    # HOME_Y = -0.300
+    # HOME_Z = 0.2
+    # HOME_RX = 125 * math.pi / 180
+    # HOME_RY = 130 * math.pi / 180
+    # HOME_RZ = 0
     HOME_JOINT = [-0.8062151114093226, -1.6997678915606897, -1.0278661886798304, -2.017801109944479, 1.5453407764434814, 2.3251354694366455]
 
     def __init__(self, robot_ip: str, robot_port: int = 30003):
