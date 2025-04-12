@@ -11,14 +11,17 @@ class URARM:
     HOME_RX = 2.233
     HOME_RY = 2.257
     HOME_RZ = -0.039 
+    HOME_JOINT = [-0.8062151114093226, -1.6997678915606897, -1.0278661886798304, -2.017801109944479, 1.5453407764434814, 2.3251354694366455]
+    ROTATE_TCP_SLEEP = 1
+    MOVEL_SLEEP = 1.5
+    TOTAL_SLEEP = ROTATE_TCP_SLEEP + (3 * MOVEL_SLEEP)
     # HOME_X = 0.116
     # HOME_Y = -0.300
     # HOME_Z = 0.2
     # HOME_RX = 125 * math.pi / 180
     # HOME_RY = 130 * math.pi / 180
     # HOME_RZ = 0
-    # HOME_JOINT = [-0.8062151114093226, -1.6997678915606897, -1.0278661886798304, -2.017801109944479, 1.5453407764434814, 2.3251354694366455]
-    HOME_JOINT = [1.6437866687774658, -1.2342007795916956, 0.4176163673400879, -0.7450755278216761, -1.6113866011248987, 1.6333143711090088]
+    # HOME_JOINT = [1.6437866687774658, -1.2342007795916956, 0.4176163673400879, -0.7450755278216761, -1.6113866011248987, 1.6333143711090088]
 
     def __init__(self, robot_ip: str, robot_port: int = 30003):
         self.arm = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -38,14 +41,15 @@ class URARM:
 
     def movel(self, pose, a: float = 0.5, v: float = 0.5, t: float = 0, r: float = 0):
         self.arm.send(f"movel({pose},{a},{v},{t},{r})\n".encode("UTF-8"))
-        time.sleep(1.5)
+        time.sleep(self.MOVEL_SLEEP)
 
     def movej(self, pose, a: float = 0.5, v: float = 0.5, t: float = 0, r: float = 0):
         self.arm.send(f"movej({pose},{a},{v},{t},{r})\n".encode("UTF-8"))
         time.sleep(1.5)
     
-    def rotate_TCP(self, rx: float = 0, ry: float = 0, rz: float = 0):
+    def rotate_TCP(self, rx: float = 0, ry: float = 0, rz: float = 0, t: float = 0):
         self.movel(f'[{self.HOME_JOINT[0]},{self.HOME_JOINT[1]},{self.HOME_JOINT[2]},{self.HOME_JOINT[3] + rx},{self.HOME_JOINT[4] + ry},{self.HOME_JOINT[5] + rz}]')
+        time.sleep(self.ROTATE_TCP_SLEEP)
 
     def get_current_joint_angle(self):
         self.arm.send(b"get_actual_joint_positions()\n")
@@ -61,6 +65,15 @@ class URARM:
         tcp_pose = struct.unpack("!6d", arm_recv[300+36*8:300+(36+6)*8])
         print("actual tcp pose:", tcp_pose)
         return tcp_pose
+
+    def grab_after_t(self, x_rel: float, y_rel: float, rz: float, t1: float, t2: float, t3: float, t4: float):
+        total_time = t1 + t2 + t3 + t4 + self.TOTAL_SLEEP
+        x_m = x_rel - (0.02 * total_time)
+        self.rotate_TCP(rz=rz, t=t1)
+        self.movel(URARM.relative_pose(z=-0.1, t=t2))
+        self.movel(URARM.relative_pose(x=x_m, y=y_rel, t=t3))
+        self.movel(URARM.relative_pose(z=-0.16, t=t4))
+
     
     @staticmethod
     def pose(x: float, y: float, z: float, rx: float, ry: float, rz: float):
