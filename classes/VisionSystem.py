@@ -4,7 +4,7 @@ import re
 import math
 
 class VisionSystem:
-    def __init__(self, vs_ip: str, vs_port: int = 2023):
+    def __init__(self, vs_ip: str, vs_port: int = 2024):
         self.v = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.v.connect((vs_ip, vs_port))
         print('Connected to Vision system ....SUCCESSFULLY!')

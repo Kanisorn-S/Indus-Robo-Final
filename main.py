@@ -4,6 +4,7 @@ from classes.ConveyorBelt import ConveyorBelt
 from classes.VisionSystem import VisionSystem
 import time
 import math
+import socket
 
 def main():
     # Define IP addresses for the robot, vision system, and conveyor belt
@@ -18,12 +19,28 @@ def main():
 
 
     # Move the robot to the home position
-    # robot.get_current_joint_angle();
     robot.move_home()
+    # robot.get_current_joint_angle();
 
     # Initialize the conveyor belt
-    conveyor = ConveyorBelt(conv_ip)
-    time.sleep(1)  # Wait for the conveyor to start
+    c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    c.bind((conv_ip, 2002))
+    c.listen(1)
+    print("Conveyor belt socket is listening")
+    conv, addr = c.accept()
+    print(f"Connected by {addr}")
+    conv.sendall(b'activate,tcp\n')
+    time.sleep(1)
+    conv.sendall(b'pwr_on,conv,0\n')
+    time.sleep(1)
+    conv.sendall(b'set_vel,conv,20\n')
+    time.sleep(1)
+    conv.sendall(b'jog_fwd,conv,0\n')
+    # time.sleep(3)
+    # conv.sendall(b'jog_stop,conv,0\n')
+    # conveyor = ConveyorBelt(conv_ip)
+    # time.sleep(5)  # Wait for the conveyor to start
+    # conveyor.stop()  # Stop the conveyor belt
 
     # Get and process the x, y coordinates and orientation of the object from the vision system
     x_x1, x_x2, x_ang, xc_x1, xc_x2, xc_ang, y_y1, y_y2, yc_y1, yc_y2 = vision.receive_data()
@@ -32,13 +49,32 @@ def main():
     print(f"Degree: {degree}, x_coor: {x_coor_rel}, y_coor: {y_coor_rel}")
 
     # Move the robot to the object location and pick up the object
-    robot.rotate_TCP(rz=-degree)
-    robot.movel(URARM.relative_pose(z=-0.1)) # Move down to allow movement to the object (might remove if not needed)
-    robot.movel(URARM.relative_pose(x=x_coor_rel, y=y_coor_rel))
-    robot.movel(URARM.relative_pose(z=-0.16))
+    robot.grab_after_t(x_rel=x_coor_rel, y_rel=y_coor_rel, rz=-degree, t1=2, t2=2, t3=2, t4=2)
+    # robot.rotate_TCP(rz=-degree)
+    # robot.movel(URARM.relative_pose(z=-0.17)) # Move down to allow movement to the object (might remove if not needed)
+    # robot.movel(URARM.relative_pose(x=x_coor_rel, y=y_coor_rel))
+    # robot.movel(URARM.relative_pose(z=-0.16))
     gripper.control_gripper(True)
     robot.movel(URARM.relative_pose(z=0.16))
     robot.move_home()
 
+    print(conv)
+    conv.sendall(b'jog_stop,conv,0\n')
+    time.sleep(1)
+    print(conv.recv(1024).decode())
+
+def home():
+    # Define IP addresses for the robot, vision system, and conveyor belt
+    robot_ip = '10.10.0.14'
+
+
+    # Initialize the robot, gripper, conveyor belt, and vision system
+    robot = URARM(robot_ip)
+
+
+    # Move the robot to the home position
+    robot.move_home()
+
 if __name__ == '__main__':
     main()
+    # home()
