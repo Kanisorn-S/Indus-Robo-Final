@@ -49,7 +49,7 @@ def main():
     print(f"Degree: {degree}, x_coor: {x_coor_rel}, y_coor: {y_coor_rel}")
 
     # Move the robot to the object location and pick up the object
-    robot.grab_after_t(x_rel=x_coor_rel, y_rel=y_coor_rel, rz=-degree, t1=2, t2=2, t3=2, t4=2)
+    robot.grab_after_t(x_rel=x_coor_rel, y_rel=y_coor_rel, rz=-degree, t1=1, t2=2, t3=1, t4=1)
     # robot.rotate_TCP(rz=-degree)
     # robot.movel(URARM.relative_pose(z=-0.17)) # Move down to allow movement to the object (might remove if not needed)
     # robot.movel(URARM.relative_pose(x=x_coor_rel, y=y_coor_rel))

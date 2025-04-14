@@ -56,6 +56,6 @@ class VisionSystem:
 
     @staticmethod
     def offset_camera(x_coor, y_coor):
-        x_coor_robot = (y_coor + 160) / 1000
-        y_coor_robot = -x_coor / 1000
+        x_coor_robot = (y_coor + 177) / 1000
+        y_coor_robot = -(x_coor + 17) / 1000
         return x_coor_robot, y_coor_robot
