@@ -33,7 +33,7 @@ def main():
     time.sleep(1)
     conv.sendall(b'pwr_on,conv,0\n')
     time.sleep(1)
-    conv.sendall(b'set_vel,conv,20\n')
+    conv.sendall(b'set_vel,conv,30\n')
     time.sleep(1)
     conv.sendall(b'jog_fwd,conv,0\n')
     # time.sleep(3)
@@ -49,13 +49,13 @@ def main():
     print(f"Degree: {degree}, x_coor: {x_coor_rel}, y_coor: {y_coor_rel}")
 
     # Move the robot to the object location and pick up the object
-    robot.grab_after_t(x_rel=x_coor_rel, y_rel=y_coor_rel, rz=-degree, t1=1, t2=2, t3=1, t4=1)
+    robot.grab_after_t(x_rel=x_coor_rel, y_rel=y_coor_rel, rz=-degree, t1=0.7, t2=0.7, t3=0.7, t4=0.7)
     # robot.rotate_TCP(rz=-degree)
     # robot.movel(URARM.relative_pose(z=-0.17)) # Move down to allow movement to the object (might remove if not needed)
     # robot.movel(URARM.relative_pose(x=x_coor_rel, y=y_coor_rel))
     # robot.movel(URARM.relative_pose(z=-0.16))
     gripper.control_gripper(True)
-    robot.movel(URARM.relative_pose(z=0.16))
+    # robot.movel(URARM.relative_pose(z=0.16))
     robot.move_home()
 
     print(conv)

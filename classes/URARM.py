@@ -37,7 +37,7 @@ class URARM:
 
     def move_home(self):
         print('Robot start moving to home position')
-        cmd_move = str.encode(f'movel(p[{self.HOME_X},{self.HOME_Y},{self.HOME_Z},{self.HOME_RX},{self.HOME_RY},{self.HOME_RZ}],a=0.5,v=0.5,t=0,r=0)\n')
+        cmd_move = str.encode(f'movel(p[{self.HOME_X},{self.HOME_Y},{self.HOME_Z},{self.HOME_RX},{self.HOME_RY},{self.HOME_RZ}],a=0.5,v=0.5,t=1,r=0)\n')
         self.arm.send(cmd_move)
         time.sleep(5)
 
@@ -51,7 +51,11 @@ class URARM:
 
     def movej(self, pose, a: float = 0.5, v: float = 0.5, t: float = 0, r: float = 0):
         self.arm.send(f"movej({pose},{a},{v},{t},{r})\n".encode("UTF-8"))
-        time.sleep(1.5)
+        if 0.75*t > 0:
+            time.sleep(0.75*t)
+        else:
+            time.sleep(self.MOVEL_SLEEP)
+        # time.sleep(1.5)
     
     def rotate_TCP(self, rx: float = 0, ry: float = 0, rz: float = 0, t: float = 0):
         self.movel(f'[{self.HOME_JOINT[0]},{self.HOME_JOINT[1]},{self.HOME_JOINT[2]},{self.HOME_JOINT[3] + rx},{self.HOME_JOINT[4] + ry},{self.HOME_JOINT[5] + rz}]', t=t)
@@ -77,7 +81,8 @@ class URARM:
 
     def grab_after_t(self, x_rel: float, y_rel: float, rz: float, t1: float, t2: float, t3: float, t4: float):
         total_time = t1 + t2 + t3 + t4
-        x_m = x_rel - (0.02 * total_time)
+        print("Total time:", total_time)
+        x_m = x_rel - (0.02 * (total_time - 2.5))
         print("Meeting point:", x_m)
         self.rotate_TCP(rz=rz, t=t1)
         self.movel(URARM.relative_pose(z=-0.18), t=t2)
