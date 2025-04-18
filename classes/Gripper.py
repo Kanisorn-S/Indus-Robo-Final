@@ -18,6 +18,6 @@ class Gripper:
 
     def control_gripper(self, activate: bool):
         self.g.send(f"SET POS {255 if activate else 0}\n".encode("UTF-8"))
-        time.sleep(1)
-        g_recv = str(self.g.recv(255), "UTF-8")
-        print(g_recv)
+        # time.sleep(1)
+        # g_recv = str(self.g.recv(255), "UTF-8")
+        # print(g_recv)
