@@ -73,7 +73,10 @@ def home():
 
 
     # Move the robot to the home position
-    robot.move_home()
+    time.sleep(2)
+    # robot.move_home()
+    robot.get_current_joint_angle();
+
 
 if __name__ == '__main__':
     main()

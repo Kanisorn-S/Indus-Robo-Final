@@ -12,7 +12,8 @@ class URARM:
     HOME_RY = 2.257
     HOME_RZ = -0.039 
     # HOME_JOINT = [-0.8062151114093226, -1.6997678915606897, -1.0278661886798304, -2.017801109944479, 1.5453407764434814, 2.3251354694366455]
-    HOME_JOINT = [1.6437987089157104, -1.2341769377337855, 0.41770029067993164, -0.7451713720904749, -1.6114829222308558, 1.6332783699035645]
+    # HOME_JOINT = [1.6437987089157104, -1.2341769377337855, 0.41770029067993164, -0.7451713720904749, -1.6114829222308558, 1.6332783699035645]
+    HOME_JOINT = [-0.8061907927142542, -1.9236505667315882, -0.3781641165362757, -2.443577591572897, 1.5453766584396362, 2.3251354694366455]
     ROTATE_TCP_SLEEP = 1
     MOVEL_SLEEP = 1.5
     TOTAL_SLEEP = ROTATE_TCP_SLEEP + (2 * MOVEL_SLEEP)
@@ -82,7 +83,7 @@ class URARM:
     def grab_after_t(self, x_rel: float, y_rel: float, rz: float, t1: float, t2: float, t3: float, t4: float):
         total_time = t1 + t2 + t3 + t4
         print("Total time:", total_time)
-        x_m = x_rel - (0.02 * (total_time - 2.5))
+        x_m = x_rel - (0.02 * (total_time))
         print("Meeting point:", x_m)
         self.rotate_TCP(rz=rz, t=t1)
         self.movel(URARM.relative_pose(z=-0.18), t=t2)
