@@ -62,10 +62,32 @@ def home():
 
     # Move the robot to the home position
     time.sleep(2)
-    # robot.move_home()
+    robot.move_home()
     robot.get_current_joint_angle();
+
+def conveyor():
+    # Initialize the connection with conveyor belt
+    c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    c.bind(('0.0.0.0', 2002))
+    c.listen(1)
+    print("Conveyor belt socket is listening")
+    conv, addr = c.accept()
+    print(f"Connected by {addr}")
+    # Activate the conveyor belt
+    conv.sendall(b'activate,tcp\n')
+    time.sleep(1)
+    conv.sendall(b'pwr_on,conv,0\n')
+    time.sleep(1)
+    conv.sendall(b'set_vel,conv,30\n')
+    time.sleep(1)
+    conv.sendall(b'jog_fwd,conv,0\n')
+    time.sleep(5)
+    conv.sendall(b'jog_stop,conv,0\n')
+    time.sleep(1)
+    print(conv.recv(1024).decode())
 
 
 if __name__ == '__main__':
     main()
     # home()
+    # conveyor()
